@@ -123,6 +123,9 @@ namespace ResourceMap
             api.Event.SaveGameLoaded += LoadSavedData;
             api.Event.GameWorldSave += SaveData;
             api.Event.ChunkColumnLoaded += (coord, chunks) => QueueScan(coord.X, coord.Y, 3000);
+            // Dug out or placed: rescan that spot straight away instead of waiting for the next rescan round.
+            api.Event.DidBreakBlock += (byPlayer, oldBlockId, blockSel) => QueueBlockChange(blockSel);
+            api.Event.DidPlaceBlock += (byPlayer, oldBlockId, blockSel, withItemStack) => QueueBlockChange(blockSel);
             api.Event.PlayerJoin += (player) =>
             {
                 if (player != null) lastSentRev.Remove(player.PlayerUID);
@@ -283,6 +286,24 @@ namespace ResourceMap
             long existing;
             if (pending.TryGetValue(key, out existing) && existing <= due) return;
             pending[key] = due;
+        }
+
+        /// <summary>
+        /// A block was broken or placed: rescan its chunk column soon. A block at a chunk edge also changes the
+        /// cliff face its neighbour sees, so the neighbouring column is rescanned too.
+        /// </summary>
+        private void QueueBlockChange(BlockSelection blockSel)
+        {
+            if (blockSel == null || blockSel.Position == null) return;
+            int size = GlobalConstants.ChunkSize;
+            int x = blockSel.Position.X, z = blockSel.Position.Z;
+            int cx = (int)Math.Floor(x / (double)size), cz = (int)Math.Floor(z / (double)size);
+            int lx = x - cx * size, lz = z - cz * size;
+            QueueScan(cx, cz, 1000);
+            if (lx == 0) QueueScan(cx - 1, cz, 1000);
+            if (lx == size - 1) QueueScan(cx + 1, cz, 1000);
+            if (lz == 0) QueueScan(cx, cz - 1, 1000);
+            if (lz == size - 1) QueueScan(cx, cz + 1, 1000);
         }
 
         /// <summary>Queues the chunk columns around a player. onlyUnknown: skip ones already scanned.</summary>

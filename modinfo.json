@@ -7,7 +7,7 @@
     "Jumboking3"
   ],
   "description": "Shows clay (blue, red, fire and modded clays), peat, high-fertility soil and surface ore nuggets on the world map and minimap. Each resource has its own colour, and clay, soil and ores each get their own map layer toggle. Hover for details. Client options: .resourcemap",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "side": "Universal",
   "requiredOnClient": true,
   "requiredOnServer": true,
